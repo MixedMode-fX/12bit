@@ -4,7 +4,7 @@
 
 
 // SPI initialisation for ADC & DAC
-void spiBegin(){
+void codecBegin(){
   SPI.begin();
   SPI.setBitOrder(MSBFIRST);
 }
