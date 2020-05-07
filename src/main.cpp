@@ -1,27 +1,32 @@
 #include <Arduino.h>
 #include <mcpcodec.h>
+#include <midicontrol.h>
+#include <12bitconfig.h>
 
-// Chip Select pins
-#define CS_DAC 8
-#define CS_ADC 9
-
-#define N_CHANNELS 2
-#define SAMPLE_PERIOD 20
-
-IntervalTimer audioTimer;
-void codec();
+uint16_t sample_period = MIN_SAMPLE_PERIOD;
 
 void setup(){
-    spiBegin();
-    pinMode(CS_DAC, OUTPUT);    pinMode(CS_ADC, OUTPUT);
-    audioTimer.begin(codec, SAMPLE_PERIOD);
-    audioTimer.priority(0);
+    codecBegin();
+    midiBegin();
 }
 
-void loop(){}
+void loop(){
+    midi();
+}
 
-void codec(){
+void audio(){
     for(uint8_t i=0; i<N_CHANNELS; i++){
         dac(adc(i, CS_ADC), i, CS_DAC);
+    }
+}
+
+void handleCC(byte channel, byte control, byte value){
+    if (channel == 1){
+        switch(control){
+            case CC_SAMPLE_RATE:
+                sample_period = map(value, 0, 127, MIN_SAMPLE_PERIOD, MAX_SAMPLE_PERIOD);
+                audioTimer.update(sample_period);
+                break;
+        }
     }
 }

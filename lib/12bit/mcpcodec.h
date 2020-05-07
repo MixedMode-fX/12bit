@@ -1,12 +1,22 @@
+#ifndef MCPCODEC_H
+#define MCPCODEC_H
+
 #include <SPI.h>
+#include "12bitconfig.h"
 
 // Simple library for MCP48x2 DAC & MCP3202 ADC
 
+IntervalTimer audioTimer;
+void audio();
 
 // SPI initialisation for ADC & DAC
-void spiBegin(){
+void codecBegin(){
   SPI.begin();
   SPI.setBitOrder(MSBFIRST);
+  pinMode(CS_DAC, OUTPUT);    pinMode(CS_ADC, OUTPUT);
+
+  audioTimer.begin(audio, DEFAULT_SAMPLE_PERIOD);
+  audioTimer.priority(0);
 }
 
 // Sample *channel* on ADC with 
@@ -35,3 +45,5 @@ void dac(int16_t value, uint8_t channel, uint8_t cs_pin){
   SPI.transfer(dac_out & 255);
   digitalWrite(cs_pin, HIGH);
 }
+
+#endif
