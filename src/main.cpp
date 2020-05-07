@@ -8,7 +8,7 @@
 #define N_CHANNELS 2
 
 void setup(){
-    spiBegin();
+    codecBegin();
     pinMode(CS_DAC, OUTPUT);    pinMode(CS_ADC, OUTPUT);
 }
 
