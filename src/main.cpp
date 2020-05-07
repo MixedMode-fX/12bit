@@ -9,6 +9,7 @@
 
 void setup(){
     spiBegin();
+    pinMode(CS_DAC, OUTPUT);    pinMode(CS_ADC, OUTPUT);
 }
 
 void loop(){
