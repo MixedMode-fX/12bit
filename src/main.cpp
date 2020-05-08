@@ -52,7 +52,9 @@ void audio(){
         output[i] = scale(output[i], volume);                       // volume control
 
         buffer[i][rec_index] = output[i];                           // record our signal to our buffer
-        delay_signal[i] = crossfade(output[i], buffer[i][(uint16_t)play_index], delay_mix);
+        play_head[i] = buffer[i][(uint16_t)play_index];
+        
+        delay_signal[i] = crossfade(output[i], play_head[i], delay_mix);
         delay_signal[i] = soft_clip(delay_signal[i]);               // soft clipper to avoid nasty distortion if the signal exceeds FULL_SCALE
         dacDCOffset(delay_signal[i], i, CS_DAC);                    // write to the dac and apply DC offset required
     }
