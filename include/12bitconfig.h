@@ -19,6 +19,8 @@
 #define MAX_SAMPLE_PERIOD MIN_SAMPLE_PERIOD*8       // = 5434 Hz - que viva aliasing
 #define DEFAULT_SAMPLE_PERIOD MIN_SAMPLE_PERIOD     // sample period
 
+// controls refresh rate
+#define CONTROLS_PERIOD 150
 
 // Volume
 #define MIN_VOLUME 0

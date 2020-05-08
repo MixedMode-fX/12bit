@@ -19,10 +19,14 @@ int16_t buffer[N_CHANNELS][DELAY_BUFFER_SIZE];    // this is our tape loop
 int16_t play_head[N_CHANNELS];              // current value played back from the tape
 uint16_t rec_index;                         // position of the record head
 int32_t play_index;                         // position of the playback head
-uint16_t delay_time = DELAY_BUFFER_SIZE/2;                        // in samples
+uint16_t delay_time = DELAY_BUFFER_SIZE/2;  // in samples
+uint16_t target_delay_time = DELAY_BUFFER_SIZE/2;  // in samples
 uint8_t input_mix = 127;
 uint8_t delay_mix = 127;
 uint8_t delay_feedback, delay_reverse, delay_ping_pong;
+
+IntervalTimer controlsTimer;                // delay time smoothing
+void controlsFilter();
 
 // Audio stream
 uint16_t sample_period = MIN_SAMPLE_PERIOD;
@@ -33,6 +37,9 @@ int16_t output[N_CHANNELS], prev_input[N_CHANNELS];
 void setup(){
     codecBegin();
     midiBegin();
+
+    controlsTimer.begin(controlsFilter, CONTROLS_PERIOD);
+    controlsTimer.priority(10);
 }
 
 void loop(){
@@ -94,7 +101,7 @@ void handleCC(byte channel, byte control, byte value){
                 lpf_cutoff = MIDIMAPF(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF);
                 break;
             case CC_DELAY_TIME:
-                delay_time = MIDIMAP(value, MIN_DELAY_TIME, DELAY_BUFFER_SIZE-1);
+                target_delay_time = MIDIMAP(value, MIN_DELAY_TIME, DELAY_BUFFER_SIZE-1);
                 break;
             case CC_DELAY_FEEDBACK:
                 delay_feedback = value << SCALE_CTRL_SHIFT;
@@ -117,5 +124,16 @@ void handleCC(byte channel, byte control, byte value){
                 break;
 
         }
+    }
+}
+
+
+void controlsFilter(){
+    // slowly adjust delay time towards target
+    if (target_delay_time > delay_time) {
+        delay_time += 1;
+    }
+    if (target_delay_time < delay_time) {
+        delay_time -= 1;
     }
 }
