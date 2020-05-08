@@ -33,16 +33,49 @@ int16_t crush(int16_t value, uint8_t bit_reduction){ // reduced bit depth and ad
 }
 
 
+
 /*
  *
- * Simple Low Pass Filter
+ * Low Pass Filter
  * Source: Beam Myself Into The Future
  * https://beammyselfintothefuture.wordpress.com/2015/02/16/simple-c-code-for-resonant-lpf-hpf-filters-and-high-low-shelving-eqs/
- * 
+ *
  */
-int16_t lpf(int16_t sample, int16_t prev_sample, double cutoff) {
-    return cutoff * (sample - prev_sample) + prev_sample;
-}
+
+class LPF{
+
+    /*
+     * First order low pass filter
+     * 
+     * Source: Matlab implementation of Reverberation Algorithms
+     * Authors: Fernando Beltran, José Ramón Beltrán Blázquez, Nicolas Holzem, Adrian Gogu
+     * https://www.researchgate.net/publication/2460443_Matlab_Implementation_of_Reverberation_Algorithms
+     * 
+     * H(z) = (1 - g) / (1 - g * z^-1)
+     *
+     * fc = cutoff frequency
+     * fs = sampling frequency
+     * tau = 2*pi*fc/fs
+     * g = 2 - cos(tau) - sqrt( (cos(tau)) - 2 ) ^ 2 - 1 )
+     * g was previously called 'cutoff'
+     * 
+     */
+
+    public:
+        LPF(double g){ _g = g; };
+        int16_t apply(int16_t sample){
+            _prev_sample = _g * (sample - _prev_sample) + _g;
+            return _prev_sample;
+        }
+
+        void setGain(double g){
+            _g = g;
+        }
+
+    private:
+        double _g;
+        int16_t _prev_sample;
+};
 
 
 /*

@@ -11,9 +11,6 @@ uint8_t bit_reduction = 0;
 uint8_t gain = 0xFF;
 uint8_t volume = 0xF0;
 
-
-float lpf_cutoff = DEFAULT_LPF_CUTOFF;
-
 // Delay
 int16_t buffer[N_CHANNELS][DELAY_BUFFER_SIZE];    // this is our tape loop
 int16_t play_head[N_CHANNELS];              // current value played back from the tape
@@ -31,8 +28,10 @@ void controlsFilter();
 // Audio stream
 uint16_t sample_period = MIN_SAMPLE_PERIOD;
 int16_t input[N_CHANNELS], feedback[N_CHANNELS];
-int16_t output[N_CHANNELS], prev_input[N_CHANNELS];
+int16_t output[N_CHANNELS];
 
+// FX
+LPF input_lpf[N_CHANNELS] = LPF(DEFAULT_LPF_CUTOFF);
 
 void setup(){
     codecBegin();
@@ -64,8 +63,7 @@ void audio(){
         input[i] = adcDCOffset(i, CS_ADC);                          // read ADC and remove DC offset
         input[i] = scale8(input[i], gain); 
         input[i] = crush(input[i], bit_reduction);                 // reduce bit depth
-        input[i] = lpf(input[i], prev_input[i], lpf_cutoff);     // low pass filter
-        prev_input[i] = input[i];
+        input[i] = input_lpf[i].apply(input[i]);     // low pass filter
 
 
         uint8_t fb_c = delay_ping_pong ? (i+1)%N_CHANNELS : i; // feedback channel
@@ -98,7 +96,8 @@ void handleCC(byte channel, byte control, byte value){
                 audioTimer.update(sample_period);
                 break;
             case CC_CUTOFF:
-                lpf_cutoff = MIDIMAPF(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF);
+                input_lpf[0].setGain(MIDIMAPF(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF));
+                input_lpf[1].setGain(MIDIMAPF(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF));
                 break;
             case CC_DELAY_TIME:
                 target_delay_time = MIDIMAP(value, MIN_DELAY_TIME, DELAY_BUFFER_SIZE-1);
