@@ -15,6 +15,10 @@ int16_t scale(int16_t value, uint8_t amplitude){
 }
 
 
+int16_t crossfade(int16_t value_a, int16_t value_b, uint8_t mix_control){
+    return scale(value_a, mix_control) + scale(value_b, 255 - mix_control);
+}
+
 /*
  *
  * Set least significant bits to 0
