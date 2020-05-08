@@ -7,7 +7,6 @@
 
 
 // FX controls
-uint16_t sample_period = MIN_SAMPLE_PERIOD;
 uint8_t bit_reduction = 0;
 uint8_t volume = 127;
 float lpf_cutoff = DEFAULT_LPF_CUTOFF;
@@ -22,6 +21,7 @@ uint8_t delay_mix = 127;
 uint8_t delay_feedback = 0;
 
 // Audio stream
+uint16_t sample_period = MIN_SAMPLE_PERIOD;
 int16_t input[N_CHANNELS];
 int16_t output[N_CHANNELS], prev_output[N_CHANNELS];
 
@@ -52,10 +52,11 @@ void audio(){
         output[i] = lpf(output[i], prev_output[i], lpf_cutoff);     // low pass filter
         output[i] = scale(output[i], volume);                       // volume control
 
-        buffer[i][rec_index] = output[i];                           // record our signal to our buffer
         play_head[i] = buffer[i][(uint16_t)play_index];
-        
-        delay_signal[i] = crossfade(output[i], play_head[i], delay_mix);
+        play_head[i] = scale(play_head[i], delay_feedback);
+        buffer[i][rec_index] = output[i] + play_head[i];            // record our signal to our buffer + add a fraction of what's on the play head
+
+        delay_signal[i] = crossfade(play_head[i], output[i], delay_mix);    // mix the input + delay
         delay_signal[i] = soft_clip(delay_signal[i]);               // soft clipper to avoid nasty distortion if the signal exceeds FULL_SCALE
 
         dacDCOffset(delay_signal[i], i, CS_DAC);                    // write to the dac and apply DC offset required
