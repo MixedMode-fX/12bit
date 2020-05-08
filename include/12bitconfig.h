@@ -9,6 +9,7 @@
 #define N_CHANNELS 2
 #define BIT_DEPTH 12
 #define FULL_SCALE 4095
+#define HALF_SCALE 2048
 
 // sample rate control
 // sample_rate [Hz] = 1 / ( sample_period * 10^-6 [s] )
@@ -17,6 +18,10 @@
 #define MAX_SAMPLE_PERIOD MIN_SAMPLE_PERIOD*8       // = 5434 Hz - que viva aliasing
 #define DEFAULT_SAMPLE_PERIOD MIN_SAMPLE_PERIOD     // sample period
 
+
+// Volume
+#define MIN_VOLUME 0
+#define MAX_VOLUME 1.0
 
 
 #endif
