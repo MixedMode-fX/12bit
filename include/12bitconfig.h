@@ -11,15 +11,13 @@
 #define FULL_SCALE 4095
 #define HALF_SCALE 2048
 
-// audio sample rate control
+// sample rate control
 // sample_rate [Hz] = 1 / ( sample_period * 10^-6 [s] )
 // period is set in microseconds
 #define MIN_SAMPLE_PERIOD 23                        // = 43478 Hz - close enough... we're doing lofi here
 #define MAX_SAMPLE_PERIOD MIN_SAMPLE_PERIOD*8       // = 5434 Hz - que viva aliasing
 #define DEFAULT_SAMPLE_PERIOD MIN_SAMPLE_PERIOD     // sample period
 
-// controls refresh rate
-#define CONTROLS_PERIOD 150
 
 // Volume
 #define MIN_VOLUME 0
