@@ -45,10 +45,10 @@ void audio(){
 
     int16_t delay_signal[N_CHANNELS];
     for(uint8_t i=0; i<N_CHANNELS; i++){
-        prev_output[i] = output[i];
         input[i] = adcDCOffset(i, CS_ADC);                          // read ADC and remove DC offset
         output[i] = crush(input[i], bit_reduction);                 // reduce bit depth
         output[i] = lpf(output[i], prev_output[i], lpf_cutoff);     // low pass filter
+        prev_output[i] = output[i];
         output[i] = scale(output[i], volume);                       // volume control
 
         buffer[i][rec_index] = output[i];                           // record our signal to our buffer
