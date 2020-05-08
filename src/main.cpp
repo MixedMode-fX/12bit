@@ -8,7 +8,11 @@
 
 uint16_t sample_period = MIN_SAMPLE_PERIOD;
 uint8_t bit_reduction = 0;
-uint8_t volume = 255;
+uint8_t volume = 127;
+float lpf_cutoff = DEFAULT_LPF_CUTOFF;
+
+int16_t input[N_CHANNELS];
+int16_t output[N_CHANNELS], prev_output[N_CHANNELS];
 
 void setup(){
     codecBegin();
@@ -20,13 +24,14 @@ void loop(){
 }
 
 void audio(){
-    int16_t input, output;
     for(uint8_t i=0; i<N_CHANNELS; i++){
-        input = adc(i, CS_ADC);
-        input -= HALF_SCALE;                                    // remove DC offset
-        output = volume * crush(input, bit_reduction) >> 8;     // reduce bit depth & scale down
-        output += HALF_SCALE;                                   // re-introduce DC offset
-        dac(output, i, CS_DAC);
+        prev_output[i] = output[i];
+        input[i] = adcDCOffset(i, CS_ADC);                          // read ADC and remove DC offset
+        output[i] = crush(input[i], bit_reduction);                 // reduce bit depth
+        output[i] = lpf(output[i], prev_output[i], lpf_cutoff);     // low pass filter
+        output[i] = scale(output[i], volume);                       // volume control
+        output[i] = soft_clip(output[i]);                           // soft clipper to avoid nasty distortion if the signal exceeds FULL_SCALE
+        dacDCOffset(output[i], i, CS_DAC);                          // write to the dac and apply DC offset required
     }
 }
 
@@ -34,7 +39,6 @@ void handleCC(byte channel, byte control, byte value){
     if (channel == 1){
         switch(control){
             case CC_VOLUME:
-                // volume = MIDIMAPF(value, MIN_VOLUME, MAX_VOLUME);
                 volume = value << 1;
                 break;
             case CC_BIT_REDUCTION:
@@ -43,6 +47,9 @@ void handleCC(byte channel, byte control, byte value){
             case CC_SAMPLE_RATE:
                 sample_period = MIDIMAP(value, MIN_SAMPLE_PERIOD, MAX_SAMPLE_PERIOD);
                 audioTimer.update(sample_period);
+                break;
+            case CC_CUTOFF:
+                lpf_cutoff = MIDIMAPF(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF);
                 break;
         }
     }
