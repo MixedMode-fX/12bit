@@ -37,8 +37,7 @@ int16_t crush(int16_t value, uint8_t bit_reduction){ // reduced bit depth and ad
  * 
  */
 int16_t lpf(int16_t sample, int16_t prev_sample, double cutoff) {
-    int16_t distance = sample - prev_sample;
-    return prev_sample += distance * cutoff;
+    return cutoff * (sample - prev_sample) + prev_sample;
 }
 
 
