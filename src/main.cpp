@@ -19,8 +19,7 @@ int32_t play_index;                         // position of the playback head
 uint16_t delay_time = DELAY_BUFFER_SIZE/2;  // in samples
 uint16_t target_delay_time = DELAY_BUFFER_SIZE/2;  // in samples
 uint8_t delay_mix = 127;
-uint8_t delay_feedback = 0;
-uint8_t delay_reverse = 0;
+uint8_t delay_feedback, delay_reverse, delay_ping_pong;
 
 IntervalTimer controlsTimer;                // delay time smoothing
 void controlsFilter();
@@ -64,8 +63,8 @@ void audio(){
         output[i] = lpf(output[i], prev_output[i], lpf_cutoff);     // low pass filter
         output[i] = scale(output[i], volume);                       // volume control
 
-        play_head[i] = buffer[i][(uint16_t)play_index];
-        play_head[i] = scale(play_head[i], delay_feedback);
+        play_head[i] = buffer[delay_ping_pong ? (i+1)%N_CHANNELS : i][(uint16_t)play_index]; // when in ping pong, get the delay from the next channel
+        play_head[i] = scale(play_head[i], delay_feedback); 
         buffer[i][rec_index] = output[i] + play_head[i];            // record our signal to our buffer + add a fraction of what's on the play head
 
         delay_signal[i] = crossfade(play_head[i], output[i], delay_mix);    // mix the input + delay
@@ -103,6 +102,10 @@ void handleCC(byte channel, byte control, byte value){
             case CC_DELAY_REVERSE:
                 delay_reverse = value > 64;
                 break;
+            case CC_DELAY_PING_PONG:
+                delay_ping_pong = value > 64;
+                break;
+
         }
     }
 }
