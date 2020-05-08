@@ -8,7 +8,10 @@
 
 // FX controls
 uint8_t bit_reduction = 0;
-uint8_t volume = 127;
+uint8_t gain = 0xFF;
+uint8_t volume = 0xF0;
+
+
 float lpf_cutoff = DEFAULT_LPF_CUTOFF;
 
 // Delay
@@ -17,13 +20,14 @@ int16_t play_head[N_CHANNELS];              // current value played back from th
 uint16_t rec_index;                         // position of the record head
 int32_t play_index;                         // position of the playback head
 uint16_t delay_time = DELAY_BUFFER_SIZE/2;                        // in samples
+uint8_t input_mix = 127;
 uint8_t delay_mix = 127;
 uint8_t delay_feedback, delay_reverse, delay_ping_pong;
 
 // Audio stream
 uint16_t sample_period = MIN_SAMPLE_PERIOD;
-int16_t input[N_CHANNELS];
-int16_t output[N_CHANNELS], prev_output[N_CHANNELS];
+int16_t input[N_CHANNELS], feedback[N_CHANNELS];
+int16_t output[N_CHANNELS], prev_input[N_CHANNELS];
 
 
 void setup(){
@@ -51,17 +55,23 @@ void audio(){
     int16_t delay_signal[N_CHANNELS];
     for(uint8_t i=0; i<N_CHANNELS; i++){
         input[i] = adcDCOffset(i, CS_ADC);                          // read ADC and remove DC offset
-        output[i] = crush(input[i], bit_reduction);                 // reduce bit depth
-        output[i] = lpf(output[i], prev_output[i], lpf_cutoff);     // low pass filter
-        prev_output[i] = output[i];
-        output[i] = scale(output[i], volume);                       // volume control
+        input[i] = scale8(input[i], gain); 
+        input[i] = crush(input[i], bit_reduction);                 // reduce bit depth
+        input[i] = lpf(input[i], prev_input[i], lpf_cutoff);     // low pass filter
+        prev_input[i] = input[i];
 
-        play_head[i] = buffer[delay_ping_pong ? (i+1)%N_CHANNELS : i][(uint16_t)play_index]; // when in ping pong, get the delay from the next channel
-        play_head[i] = scale(play_head[i], delay_feedback); 
-        buffer[i][rec_index] = output[i] + play_head[i];            // record our signal to our buffer + add a fraction of what's on the play head
 
-        delay_signal[i] = crossfade(play_head[i], output[i], delay_mix);    // mix the input + delay
-        delay_signal[i] = soft_clip(delay_signal[i]);               // soft clipper to avoid nasty distortion if the signal exceeds FULL_SCALE
+        uint8_t fb_c = delay_ping_pong ? (i+1)%N_CHANNELS : i; // feedback channel
+        play_head[i] = buffer[i][(uint16_t)play_index]; // when in ping pong, get the delay from the next channel
+        feedback[i] = scale8(play_head[fb_c], delay_feedback); 
+        buffer[i][rec_index] = input[i] + feedback[i];            // record our signal to our buffer + add a fraction of what's on the play head
+    }
+
+    for(uint8_t i=0; i<N_CHANNELS; i++){
+        delay_signal[i]  = scale8(input[i], input_mix);
+        delay_signal[i] += scale8(play_head[i], delay_mix);
+        delay_signal[i]  = scale8(delay_signal[i], volume);
+        delay_signal[i]  = soft_clip(delay_signal[i]);               // soft clipper to avoid nasty distortion if the signal exceeds FULL_SCALE
 
         dacDCOffset(delay_signal[i], i, CS_DAC);                    // write to the dac and apply DC offset required
     }
@@ -70,8 +80,8 @@ void audio(){
 void handleCC(byte channel, byte control, byte value){
     if (channel == 1){
         switch(control){
-            case CC_VOLUME:
-                volume = value << 1;
+            case CC_GAIN:
+                gain = value << SCALE_CTRL_SHIFT;
                 break;
             case CC_BIT_REDUCTION:
                 bit_reduction = MIDIMAP(value, 0, BIT_DEPTH-1);
@@ -87,11 +97,18 @@ void handleCC(byte channel, byte control, byte value){
                 delay_time = MIDIMAP(value, MIN_DELAY_TIME, DELAY_BUFFER_SIZE-1);
                 break;
             case CC_DELAY_FEEDBACK:
-                delay_feedback = value << 1;
+                delay_feedback = value << SCALE_CTRL_SHIFT;
+                break;
+            case CC_INPUT_MIX:
+                input_mix = value << SCALE_CTRL_SHIFT;
                 break;
             case CC_DELAY_MIX:
                 delay_mix = value << 1;
                 break;
+            case CC_VOLUME:
+                volume = value << 1;
+                break;
+
             case CC_DELAY_REVERSE:
                 delay_reverse = value > 64;
                 break;

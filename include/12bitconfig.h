@@ -10,6 +10,7 @@
 #define BIT_DEPTH 12
 #define FULL_SCALE 4095
 #define HALF_SCALE 2048
+#define SCALE_CTRL_SHIFT 1
 
 // sample rate control
 // sample_rate [Hz] = 1 / ( sample_period * 10^-6 [s] )

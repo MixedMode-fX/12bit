@@ -10,13 +10,17 @@
  * https://github.com/BleepLabs/Rad-Fi-Delay-1.5
  * 
  */
-int16_t scale(int16_t value, uint8_t amplitude){ 
+int16_t scale8(int16_t value, uint8_t amplitude){ 
     return (amplitude * value) >> 8; 
+}
+
+int16_t scale12(int16_t value, uint16_t amplitude){ 
+    return (amplitude * value) >> BIT_DEPTH; 
 }
 
 
 int16_t crossfade(int16_t value_a, int16_t value_b, uint8_t mix_control){
-    return scale(value_a, mix_control) + scale(value_b, 255 - mix_control);
+    return scale8(value_a, mix_control) + scale8(value_b, 255 - mix_control);
 }
 
 /*
