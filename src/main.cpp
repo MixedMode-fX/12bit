@@ -25,10 +25,10 @@ void loop(){
 
 void audio(){
     for(uint8_t i=0; i<N_CHANNELS; i++){
-        prev_output[i] = output[i];
         input[i] = adcDCOffset(i, CS_ADC);                          // read ADC and remove DC offset
         output[i] = crush(input[i], bit_reduction);                 // reduce bit depth
         output[i] = lpf(output[i], prev_output[i], lpf_cutoff);     // low pass filter
+        prev_output[i] = output[i];
         output[i] = scale(output[i], volume);                       // volume control
         output[i] = soft_clip(output[i]);                           // soft clipper to avoid nasty distortion if the signal exceeds FULL_SCALE
         dacDCOffset(output[i], i, CS_DAC);                          // write to the dac and apply DC offset required

@@ -24,8 +24,8 @@
 #define MAX_VOLUME 1.0
 
 // LPF
-#define MIN_LPF_CUTOFF 0.01
-#define MAX_LPF_CUTOFF 0.6
+#define MIN_LPF_CUTOFF 0.005
+#define MAX_LPF_CUTOFF 0.2
 #define DEFAULT_LPF_CUTOFF MAX_LPF_CUTOFF
 
 #endif
