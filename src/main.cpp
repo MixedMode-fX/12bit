@@ -60,7 +60,7 @@ void audio(){
 
     int16_t delay_signal[N_CHANNELS];
     for(uint8_t i=0; i<N_CHANNELS; i++){
-        input[i] = adcDCOffset(i, CS_ADC);                          // read ADC and remove DC offset
+        input[i] = -adcDCOffset(i, CS_ADC);                          // read ADC and remove DC offset, input buffer is phase inverting
         input[i] = scale8(input[i], gain); 
         input[i] = crush(input[i], bit_reduction);                 // reduce bit depth
         input[i] = input_lpf[i].apply(input[i]);     // low pass filter
