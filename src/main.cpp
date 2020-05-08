@@ -20,6 +20,7 @@ uint16_t delay_time = DELAY_BUFFER_SIZE/2;  // in samples
 uint16_t target_delay_time = DELAY_BUFFER_SIZE/2;  // in samples
 uint8_t delay_mix = 127;
 uint8_t delay_feedback = 0;
+uint8_t delay_reverse = 0;
 
 IntervalTimer controlsTimer;                // delay time smoothing
 void controlsFilter();
@@ -46,7 +47,11 @@ void audio(){
 
     // delay write and read index
     rec_index = (rec_index + 1) % DELAY_BUFFER_SIZE;
-    play_index =  (rec_index - delay_time);
+    if(!delay_reverse){
+        play_index =  (rec_index - delay_time);
+    } else {
+        play_index = DELAY_BUFFER_SIZE - (rec_index - delay_time);
+    }
     if (play_index < 0) play_index += DELAY_BUFFER_SIZE;
     play_index %= DELAY_BUFFER_SIZE;
 
@@ -95,7 +100,9 @@ void handleCC(byte channel, byte control, byte value){
             case CC_DELAY_MIX:
                 delay_mix = value << 1;
                 break;
-
+            case CC_DELAY_REVERSE:
+                delay_reverse = value > 64;
+                break;
         }
     }
 }

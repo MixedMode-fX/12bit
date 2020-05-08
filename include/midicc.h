@@ -8,5 +8,6 @@
 #define CC_DELAY_TIME 19
 #define CC_DELAY_FEEDBACK 20
 #define CC_DELAY_MIX 21
+#define CC_DELAY_REVERSE 0
 
 #endif
