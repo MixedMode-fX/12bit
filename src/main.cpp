@@ -19,6 +19,7 @@ uint16_t rec_index;                         // position of the record head
 int32_t play_index;                         // position of the playback head
 uint16_t delay_time = DELAY_BUFFER_SIZE/2;                        // in samples
 uint8_t delay_mix = 127;
+uint8_t delay_feedback = 0;
 
 // Audio stream
 int16_t input[N_CHANNELS];
@@ -52,8 +53,11 @@ void audio(){
         output[i] = scale(output[i], volume);                       // volume control
 
         buffer[i][rec_index] = output[i];                           // record our signal to our buffer
-        delay_signal[i] = crossfade(output[i], buffer[i][(uint16_t)play_index], delay_mix);
+        play_head[i] = buffer[i][(uint16_t)play_index];
+        
+        delay_signal[i] = crossfade(output[i], play_head[i], delay_mix);
         delay_signal[i] = soft_clip(delay_signal[i]);               // soft clipper to avoid nasty distortion if the signal exceeds FULL_SCALE
+
         dacDCOffset(delay_signal[i], i, CS_DAC);                    // write to the dac and apply DC offset required
     }
 }
@@ -75,7 +79,10 @@ void handleCC(byte channel, byte control, byte value){
                 lpf_cutoff = MIDIMAPF(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF);
                 break;
             case CC_DELAY_TIME:
-                delay_time = MIDIMAP(value, MIN_DELAY_TIME, DELAY_BUFFER_SIZE);
+                delay_time = MIDIMAP(value, MIN_DELAY_TIME, DELAY_BUFFER_SIZE-1);
+                break;
+            case CC_DELAY_FEEDBACK:
+                delay_feedback = value << 1;
                 break;
             case CC_DELAY_MIX:
                 delay_mix = value << 1;
