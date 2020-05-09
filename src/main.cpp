@@ -55,24 +55,40 @@ void loop(){
 }
 
 void audioIn(){
+
+    // delay write and read index
+    rec_index = (rec_index + 1) % DELAY_BUFFER_SIZE;
+    if(!delay_reverse){
+        play_index =  (rec_index - delay_time);
+    } else {
+        play_index = DELAY_BUFFER_SIZE - (rec_index - delay_time);
+    }
+    if (play_index < 0) play_index += DELAY_BUFFER_SIZE;
+    play_index %= DELAY_BUFFER_SIZE;
+
     // Input & playback
     for(uint8_t i=0; i<N_CHANNELS; i++){
         input[i] = adcDCOffset(i, CS_ADC);                           // read ADC and remove DC offset
+        input[i] = scale8(input[i], gain) << 2;
         input[i] = crush(input[i], bit_reduction, bit_mask);         // reduce bit depth & apply mask
         input[i] = input_lpf[i].apply(input[i]);                     // low pass filter
-        input[i] = scale8(input[i], gain);                           // input gain control
 
         play_head[i] = tape[i][(uint16_t)play_index];                // read back the tape
+    }
+
+    // feedback & ping pong
+    for(uint8_t i=0; i<N_CHANNELS; i++){
+        uint8_t fb_c = delay_ping_pong ? (i+1)%N_CHANNELS : i;       // feedback channel
+        feedback[i] = play_head[fb_c];
+        if (delay_filter_enable) feedback[i] = delay_lpf[i].apply(feedback[i]);     // low pass filter
+        feedback[i] = scale8(feedback[i], delay_feedback);           // feedback is not taken from either the same or the other channel when set to ping pong
+        tape[i][rec_index] = input[i] + feedback[i];                 // record the signal to tape + add a fraction of what's on the play head
     }
 }
 
 void audioOut(){
     // Output mixer
     for(uint8_t i=0; i<N_CHANNELS; i++){
-        uint8_t fb_c = delay_ping_pong ? (i+1)%N_CHANNELS : i;       // feedback channel
-        feedback[i] = scale8(play_head[fb_c], delay_feedback);       // feedback is not taken from either the same or the other channel when set to ping pong
-        tape[i][rec_index] = input[i] + feedback[i];                 // record the signal to tape + add a fraction of what's on the play head
-
         output[i]  = scale8(input[i], input_mix); 
         output[i] += scale8(play_head[i], delay_mix);
         output[i]  = scale8(output[i], volume);
