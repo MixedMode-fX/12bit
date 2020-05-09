@@ -28,8 +28,8 @@ int16_t crossfade(int16_t value_a, int16_t value_b, uint8_t mix_control){
  * Set least significant bits to 0
  * 
  */
-int16_t crush(int16_t value, uint8_t bit_reduction){ // reduced bit depth and adjust output volume
-    return ((value >> bit_reduction) << bit_reduction);
+int16_t crush(int16_t value, uint8_t bit_reduction, uint16_t mask){ // reduced bit depth and adjust output volume
+    return ((value >> bit_reduction) << bit_reduction) & (0xFFFF - mask);
 }
 
 

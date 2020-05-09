@@ -15,7 +15,7 @@
 // sample rate control
 // sample_rate [Hz] = 1 / ( sample_period * 10^-6 [s] )
 // period is set in microseconds
-#define MIN_SAMPLE_PERIOD 23                        // = 43478 Hz - close enough... we're doing lofi here
+#define MIN_SAMPLE_PERIOD 28                        // = 43478 Hz - close enough... we're doing lofi here
 #define MIN_SAMPLE_RATE 1/MIN_SAMPLE_PERIOD
 #define MAX_SAMPLE_PERIOD MIN_SAMPLE_PERIOD*8       // = 5434 Hz - que viva aliasing
 #define DEFAULT_SAMPLE_PERIOD MIN_SAMPLE_PERIOD     // sample period
@@ -33,7 +33,7 @@
 #define DEFAULT_LPF_CUTOFF MAX_LPF_CUTOFF
 
 // DELAY
-#define DELAY_BUFFER_SIZE 61000
+#define DELAY_BUFFER_SIZE 16384 // 61000 is cool
 #define MIN_DELAY_TIME 0
 
 #endif

@@ -8,6 +8,8 @@
 
 // FX controls
 uint8_t bit_reduction = 0;
+uint16_t bit_mask = 0;
+uint8_t bit_mask_enable = 1;
 uint8_t gain = 0xFF;
 uint8_t volume = 0xF0;
 
@@ -62,7 +64,7 @@ void audio(){
     for(uint8_t i=0; i<N_CHANNELS; i++){
         input[i] = -adcDCOffset(i, CS_ADC);                          // read ADC and remove DC offset, input buffer is phase inverting
         input[i] = scale8(input[i], gain); 
-        input[i] = crush(input[i], bit_reduction);                 // reduce bit depth
+        input[i] = crush(input[i], bit_reduction, bit_mask);                 // reduce bit depth
         input[i] = input_lpf[i].apply(input[i]);     // low pass filter
 
 
@@ -120,6 +122,29 @@ void handleCC(byte channel, byte control, byte value){
                 break;
             case CC_DELAY_PING_PONG:
                 delay_ping_pong = value > 64;
+                break;
+
+            case CC_BIT_MASK:
+                bit_mask_enable = value > 64;
+                break;
+
+            case CC_BIT_B0:
+            case CC_BIT_B1:
+            case CC_BIT_B2:
+            case CC_BIT_B3:
+            case CC_BIT_B4:
+            case CC_BIT_B5:
+            case CC_BIT_B6:
+            case CC_BIT_B7:
+
+                if (value > 64){
+                    bit_mask |= 1 << (control - CC_BIT_B0 + 4);
+                } else {
+                    bit_mask &= 0 << (control - CC_BIT_B0 + 4);
+                }
+                break;
+
+            default:
                 break;
 
         }
