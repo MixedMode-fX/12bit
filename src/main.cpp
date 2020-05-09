@@ -18,9 +18,6 @@ uint8_t volume = 0xFF;
 
 uint16_t delay_time = DELAY_BUFFER_SIZE/2;      // in samples
 uint16_t target_delay_time = DELAY_BUFFER_SIZE/2;
-uint8_t input_mix = 127;
-uint8_t delay_mix = 127;
-uint8_t delay_feedback, delay_reverse, delay_ping_pong, delay_filter_enable;
 
 // Audio stream
 uint16_t sample_period_dac = MIN_SAMPLE_PERIOD_DAC;
@@ -59,21 +56,18 @@ void audioIn(){
 
     // Input & playback
     for(uint8_t i=0; i<N_CHANNELS; i++){
-        input[i] = adcDCOffset(i, CS_ADC);                           // read ADC and remove DC offset
-        input[i] = crush(input[i], bit_reduction, bit_mask);         // reduce bit depth & apply mask
-        input[i] = input_lpf[i].apply(input[i]);                     // low pass filter
-        input[i] = scale8(input[i], gain);                           // input gain control
-        tape_delay.rec(i, input[i]);                                // record to the tape at the same rate as the DAC
+        input[i] = adcDCOffset(i, CS_ADC);                          // read ADC and remove DC offset
+        input[i] = crush(input[i], bit_reduction, bit_mask);        // reduce bit depth & apply mask
+        input[i] = input_lpf[i].apply(input[i]);                    // low pass filter
+        input[i] = scale8(input[i], gain);                          // input gain control
+        tape_delay.rec(i, input[i]);                                // record to the tape
     }
-
-    tape_delay.hold();                                               // sample the delay output at the same rate as the ADC
 }
 
 void audioOut(){
     // Output mixer
     for(uint8_t i=0; i<N_CHANNELS; i++){
-        output[i]  = scale8(input[i], input_mix); 
-        output[i] += scale8(tape_delay.out(i), delay_mix);
+        output[i] = tape_delay.out(i);
         output[i]  = scale8(output[i], volume);
         output[i]  = soft_clip(output[i]);                           // soft clipper to avoid nasty distortion if the signal exceeds FULL_SCALE
         dacDCOffset(output[i], i, CS_DAC);                           // write to the dac and apply DC offset required
@@ -92,35 +86,33 @@ void handleCC(byte channel, byte control, byte value){
                 input_lpf[1].setGain(MIDIMAPF(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF));
                 break;
 
-            // case CC_DELAY_CUTOFF:
-            //     delay_lpf[0].setGain(MIDIMAPF(value, 0.1, 0.4));
-            //     delay_lpf[1].setGain(MIDIMAPF(value, 0.1, 0.4));
-            //     break;
-
             case CC_DELAY_TIME:
                 target_delay_time = MIDIMAP(value, MIN_DELAY_TIME, DELAY_BUFFER_SIZE-1);
                 break;
             case CC_DELAY_FEEDBACK:
                 tape_delay.setFeedback(value << SCALE_CTRL_SHIFT);
                 break;
+            case CC_DELAY_CUTOFF:
+                tape_delay.setLPFCutoff(MIDIMAPF(value, 0.1, 0.4));
+                break;
             case CC_INPUT_MIX:
-                input_mix = value << SCALE_CTRL_SHIFT;
+                tape_delay.setInputMix(value << SCALE_CTRL_SHIFT);
                 break;
             case CC_DELAY_MIX:
-                delay_mix = value << 1;
+                tape_delay.setDelayMix(value << SCALE_CTRL_SHIFT);
                 break;
-            case CC_VOLUME:
-                volume = value << 1;
-                break;
-
             case CC_DELAY_REVERSE:
-                delay_reverse = value > 64;
+                tape_delay.setReverse(value > 64);
                 break;
             case CC_DELAY_PING_PONG:
-                delay_ping_pong = value > 64;
+                tape_delay.setPingPong(value > 64);
                 break;
             case CC_DELAY_FILTER_ENABLE:
-                delay_filter_enable = value > 64;
+                tape_delay.setLPF(value > 64);
+                break;
+
+            case CC_VOLUME:
+                volume = value << 1;
                 break;
 
 
