@@ -69,12 +69,14 @@ void audio(){
         input[i] = scale8(input[i], gain);                           // input gain control
 
         play_head[i] = tape[i][(uint16_t)play_index];                // read back the tape
-        feedback[i] = scale8(play_head[i], delay_feedback);          // scale this signal down - this is the feedback amount
-        tape[i][rec_index] = input[i] + feedback[i];                 // record the signal to tape + add a fraction of what's on the play head
     }
 
     // Output mixer
     for(uint8_t i=0; i<N_CHANNELS; i++){
+        uint8_t fb_c = delay_ping_pong ? (i+1)%N_CHANNELS : i;       // feedback channel
+        feedback[i] = scale8(play_head[fb_c], delay_feedback);       // feedback is not taken from either the same or the other channel when set to ping pong
+        tape[i][rec_index] = input[i] + feedback[i];                 // record the signal to tape + add a fraction of what's on the play head
+
         output[i]  = scale8(input[i], input_mix); 
         output[i] += scale8(play_head[i], delay_mix);
         output[i]  = scale8(output[i], volume);
