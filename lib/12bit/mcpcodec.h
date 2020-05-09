@@ -6,8 +6,9 @@
 
 // Simple library for MCP48x2 DAC & MCP3202 ADC
 
-IntervalTimer audioTimer;
-void audio();
+IntervalTimer audioTimerADC, audioTimerDAC;
+void audioIn();
+void audioOut();
 
 // SPI initialisation for ADC & DAC
 void codecBegin(){
@@ -15,8 +16,11 @@ void codecBegin(){
   SPI.setBitOrder(MSBFIRST);
   pinMode(CS_DAC, OUTPUT);    pinMode(CS_ADC, OUTPUT);
 
-  audioTimer.begin(audio, DEFAULT_SAMPLE_PERIOD);
-  audioTimer.priority(0);
+  audioTimerADC.begin(audioIn, DEFAULT_SAMPLE_PERIOD);
+  audioTimerADC.priority(0);
+  audioTimerDAC.begin(audioOut, DEFAULT_SAMPLE_PERIOD);
+  audioTimerDAC.priority(1);
+
 }
 
 // Sample *channel* on ADC with 

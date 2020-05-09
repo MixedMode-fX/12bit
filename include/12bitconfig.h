@@ -15,10 +15,15 @@
 // sample rate control
 // sample_rate [Hz] = 1 / ( sample_period * 10^-6 [s] )
 // period is set in microseconds
-#define MIN_SAMPLE_PERIOD 28                        // = 43478 Hz - close enough... we're doing lofi here
-#define MIN_SAMPLE_RATE 1/MIN_SAMPLE_PERIOD
-#define MAX_SAMPLE_PERIOD MIN_SAMPLE_PERIOD*8       // = 5434 Hz - que viva aliasing
-#define DEFAULT_SAMPLE_PERIOD MIN_SAMPLE_PERIOD     // sample period
+#define DEFAULT_SAMPLE_PERIOD 120     // sample period
+#define MIN_SAMPLE_PERIOD DEFAULT_SAMPLE_PERIOD/4                        // = 43478 Hz - close enough... we're doing lofi here
+#define MAX_SAMPLE_PERIOD DEFAULT_SAMPLE_PERIOD*4       // = 5434 Hz - que viva aliasing
+
+
+#define DEFAULT_SAMPLE_PERIOD_DAC 30     // sample period
+#define MIN_SAMPLE_PERIOD_DAC DEFAULT_SAMPLE_PERIOD_DAC                        // = 43478 Hz - close enough... we're doing lofi here
+#define MAX_SAMPLE_PERIOD_DAC DEFAULT_SAMPLE_PERIOD_DAC*12       // = 5434 Hz - que viva aliasing
+
 
 // controls refresh rate
 #define CONTROLS_PERIOD 150

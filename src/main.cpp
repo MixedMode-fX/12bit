@@ -28,7 +28,8 @@ IntervalTimer controlsTimer;                // delay time smoothing
 void controlsFilter();
 
 // Audio stream
-uint16_t sample_period = MIN_SAMPLE_PERIOD;
+uint16_t sample_period_dac = MIN_SAMPLE_PERIOD_DAC;
+uint16_t sample_period_adc = MIN_SAMPLE_PERIOD;
 int16_t input[N_CHANNELS], feedback[N_CHANNELS];
 int16_t output[N_CHANNELS];
 
@@ -39,6 +40,9 @@ void setup(){
     codecBegin();
     midiBegin();
 
+    audioTimerDAC.update(sample_period_dac);
+    audioTimerADC.update(sample_period_adc);
+
     controlsTimer.begin(controlsFilter, CONTROLS_PERIOD);
     controlsTimer.priority(10);
 }
@@ -47,7 +51,7 @@ void loop(){
     midi();
 }
 
-void audio(){
+void audioIn(){
 
     // delay write and read index
     rec_index = (rec_index + 1) % DELAY_BUFFER_SIZE;
@@ -60,10 +64,9 @@ void audio(){
     play_index %= DELAY_BUFFER_SIZE;
 
 
-    int16_t delay_signal[N_CHANNELS];
     for(uint8_t i=0; i<N_CHANNELS; i++){
         input[i] = -adcDCOffset(i, CS_ADC);                          // read ADC and remove DC offset, input buffer is phase inverting
-        input[i] = scale8(input[i], gain); 
+        input[i] = scale8(input[i], gain) << 2; 
         input[i] = crush(input[i], bit_reduction, bit_mask);                 // reduce bit depth
         input[i] = input_lpf[i].apply(input[i]);     // low pass filter
 
@@ -73,7 +76,10 @@ void audio(){
         feedback[i] = scale8(play_head[fb_c], delay_feedback); 
         buffer[i][rec_index] = input[i] + feedback[i];            // record our signal to our buffer + add a fraction of what's on the play head
     }
+}
 
+void audioOut(){
+    int16_t delay_signal[N_CHANNELS];
     for(uint8_t i=0; i<N_CHANNELS; i++){
         delay_signal[i]  = scale8(input[i], input_mix);
         delay_signal[i] += scale8(play_head[i], delay_mix);
@@ -90,13 +96,7 @@ void handleCC(byte channel, byte control, byte value){
             case CC_GAIN:
                 gain = value << SCALE_CTRL_SHIFT;
                 break;
-            case CC_BIT_REDUCTION:
-                bit_reduction = MIDIMAP(value, 0, BIT_DEPTH-1);
-                break;
-            case CC_SAMPLE_RATE:
-                sample_period = MIDIMAP(value, MIN_SAMPLE_PERIOD, MAX_SAMPLE_PERIOD);
-                audioTimer.update(sample_period);
-                break;
+
             case CC_CUTOFF:
                 input_lpf[0].setGain(MIDIMAPF(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF));
                 input_lpf[1].setGain(MIDIMAPF(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF));
@@ -124,8 +124,18 @@ void handleCC(byte channel, byte control, byte value){
                 delay_ping_pong = value > 64;
                 break;
 
-            case CC_BIT_MASK:
-                bit_mask_enable = value > 64;
+            case CC_BIT_REDUCTION:
+                bit_reduction = MIDIMAP(value, 0, BIT_DEPTH-1);
+                break;
+
+            case CC_SAMPLE_PERIOD_DAC:
+                sample_period_dac = MIDIMAP(value, MIN_SAMPLE_PERIOD_DAC, MAX_SAMPLE_PERIOD_DAC);
+                audioTimerDAC.update(sample_period_dac);
+                break;
+
+            case CC_SAMPLE_PERIOD_ADC:
+                sample_period_adc = MIDIMAP(value, MIN_SAMPLE_PERIOD, MAX_SAMPLE_PERIOD);
+                audioTimerADC.update(sample_period_adc);
                 break;
 
             case CC_BIT_B0:
