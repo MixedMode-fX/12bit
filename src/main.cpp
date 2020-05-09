@@ -87,7 +87,7 @@ void handleCC(byte channel, byte control, byte value){
                 break;
 
             case CC_DELAY_TIME:
-                target_delay_time = MIDIMAP(value, MIN_DELAY_TIME, DELAY_BUFFER_SIZE-1);
+                tape_delay.setDelayTarget(MIDIMAP(value, MIN_DELAY_TIME, DELAY_BUFFER_SIZE-1));
                 break;
             case CC_DELAY_FEEDBACK:
                 tape_delay.setFeedback(value << SCALE_CTRL_SHIFT);
@@ -156,12 +156,5 @@ void handleCC(byte channel, byte control, byte value){
 
 void controlsFilter(){
     // slowly adjust delay time towards target
-    if (target_delay_time > delay_time) {
-        delay_time += 1;
-        tape_delay.setDelay(delay_time);
-    }
-    if (target_delay_time < delay_time) {
-        delay_time -= 1;
-        tape_delay.setDelay(delay_time);
-    }
+    tape_delay.smoothDelay();
 }

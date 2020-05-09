@@ -79,12 +79,15 @@ class PlaybackHead{
 class TapeDelay {
 
     public:
-        TapeDelay(uint16_t delay){
+        TapeDelay(uint16_t d){
             repro.setRecorder(&record);
-            repro.setDelay(delay);
+            repro.setDelay(d);
+            target_delay_time = d;
+            delay_time = d;
         }
 
-        void setDelay(uint16_t delay){ repro.setDelay(delay); }
+        void setDelay(uint16_t d){ repro.setDelay(d); }
+        void setDelayTarget(uint16_t dt){ target_delay_time = dt; }
         void setFeedback(uint8_t fb){ feedback_level = fb; }
         void setReverse(bool r){ repro.setReverse(r); }
         void setPingPong(bool p){ ping_pong = p; }
@@ -105,16 +108,27 @@ class TapeDelay {
         void rec(uint8_t channel, int16_t input){
             input_signal[channel] = input;
             uint8_t fb_c = ping_pong ? (channel+1)%N_CHANNELS : channel;
-            int16_t feedback = scale8(repro.play(fb_c), feedback_level);
-            if (filter) feedback = lpf[channel].apply(feedback);
-            record.rec(channel, input + feedback);
-            sample_hold[channel] = repro.play(fb_c);
+            feedback[channel] = scale8(repro.play(fb_c), feedback_level);
+            if (filter) feedback[channel] = lpf[channel].apply(feedback[channel]);
+            record.rec(channel, input + feedback[channel]);
+            repro_signal[channel] = repro.play(fb_c);
         }
 
         int16_t out(uint8_t channel){
             int16_t output = scale8(input_signal[channel], input_mix); 
-            output += scale8(sample_hold[channel], delay_mix);
+            output += scale8(repro_signal[channel], delay_mix);
             return output;
+        }
+
+        void smoothDelay(){
+            if (target_delay_time > delay_time) {
+                delay_time += 1;
+                setDelay(delay_time);
+            }
+            if (target_delay_time < delay_time) {
+                delay_time -= 1;
+                setDelay(delay_time);
+            }
         }
 
     private:
@@ -125,7 +139,8 @@ class TapeDelay {
 
         // signals
         int16_t input_signal[N_CHANNELS];
-        int16_t sample_hold[N_CHANNELS];
+        int16_t repro_signal[N_CHANNELS];
+        int16_t feedback[N_CHANNELS];
         int16_t mixer_output[N_CHANNELS];
 
         // parameters        
@@ -134,6 +149,7 @@ class TapeDelay {
         uint8_t feedback_level = 0;
         uint8_t input_mix = 127;
         uint8_t delay_mix = 127;
+        uint16_t target_delay_time, delay_time;
 
 
 };
