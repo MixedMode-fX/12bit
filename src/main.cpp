@@ -36,7 +36,7 @@ void loop(){
 
 void audio(){
 
-    // delay write and read index
+    // delay write and read index - this is the position of the tape
     rec_index = (rec_index + 1) % DELAY_BUFFER_SIZE;
     play_index =  (rec_index - delay_time);
     if (play_index < 0) play_index += DELAY_BUFFER_SIZE;
@@ -48,10 +48,10 @@ void audio(){
         input[i] = adcDCOffset(i, CS_ADC);                          // read ADC and remove DC offset
         output[i] = crush(input[i], bit_reduction);                 // reduce bit depth
         output[i] = lpf(output[i], prev_output[i], lpf_cutoff);     // low pass filter
-        prev_output[i] = output[i];
+        prev_output[i] = output[i];                                 // this is the z^-1 delay for the filter
         output[i] = scale(output[i], volume);                       // volume control
 
-        buffer[i][rec_index] = output[i];                           // record our signal to our buffer
+        buffer[i][rec_index] = output[i];                           // record the signal to tape
         play_head[i] = buffer[i][(uint16_t)play_index];
         
         delay_signal[i] = crossfade(output[i], play_head[i], delay_mix);
