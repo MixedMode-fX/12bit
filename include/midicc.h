@@ -2,21 +2,22 @@
 #define MIDICC_H
 
 #define CC_GAIN 15
-#define CC_CUTOFF 16
-#define CC_SAMPLE_PERIOD_ADC 17
-#define CC_DELAY_TIME 18
-#define CC_DELAY_FEEDBACK 19
+#define CC_SAMPLE_PERIOD_ADC 16
+#define CC_DELAY_TIME 17
+#define CC_DELAY_FEEDBACK 18
+#define CC_DELAY_CUTOFF 19
 #define CC_INPUT_MIX 20
 #define CC_DELAY_MIX 21
 #define CC_VOLUME 22
 
 #define CC_DELAY_PING_PONG 0
 #define CC_DELAY_REVERSE 1
+#define CC_DELAY_FILTER_ENABLE 2
 
 #define CC_BIT_REDUCTION 48
 #define CC_SAMPLE_PERIOD_DAC 49
+#define CC_CUTOFF 50
 
-#define CC_BIT_MASK 2
 #define CC_BIT_B0 40
 #define CC_BIT_B1 41
 #define CC_BIT_B2 42

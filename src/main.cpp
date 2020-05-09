@@ -11,7 +11,7 @@ uint8_t bit_reduction = 0;
 uint16_t bit_mask = 0;
 uint8_t bit_mask_enable = 1;
 uint8_t gain = 0xFF;
-uint8_t volume = 0xF0;
+uint8_t volume = 0xFF;
 
 // Delay
 int16_t buffer[N_CHANNELS][DELAY_BUFFER_SIZE];    // this is our tape loop
@@ -20,9 +20,9 @@ uint16_t rec_index;                         // position of the record head
 int32_t play_index;                         // position of the playback head
 uint16_t delay_time = DELAY_BUFFER_SIZE/2;  // in samples
 uint16_t target_delay_time = DELAY_BUFFER_SIZE/2;  // in samples
-uint8_t input_mix = 127;
-uint8_t delay_mix = 127;
-uint8_t delay_feedback, delay_reverse, delay_ping_pong;
+uint8_t input_mix = 0xFF;
+uint8_t delay_mix = 0;
+uint8_t delay_feedback, delay_reverse, delay_ping_pong, delay_filter_enable;
 
 IntervalTimer controlsTimer;                // delay time smoothing
 void controlsFilter();
@@ -35,6 +35,7 @@ int16_t output[N_CHANNELS];
 
 // FX
 LPF input_lpf[N_CHANNELS] = LPF(DEFAULT_LPF_CUTOFF);
+LPF delay_lpf[N_CHANNELS] = LPF(DEFAULT_LPF_CUTOFF);
 
 void setup(){
     codecBegin();
@@ -72,8 +73,11 @@ void audioIn(){
 
 
         uint8_t fb_c = delay_ping_pong ? (i+1)%N_CHANNELS : i; // feedback channel
-        play_head[i] = buffer[i][(uint16_t)play_index]; // when in ping pong, get the delay from the next channel
-        feedback[i] = scale8(play_head[fb_c], delay_feedback); 
+        play_head[i] = buffer[i][(uint16_t)play_index];
+
+        feedback[i] = play_head[fb_c];
+        if (delay_filter_enable) feedback[i] = delay_lpf[i].apply(feedback[i]);     // low pass filter
+        feedback[i] = scale8(feedback[i], delay_feedback);  // when in ping pong, get the delay from the next channel
         buffer[i][rec_index] = input[i] + feedback[i];            // record our signal to our buffer + add a fraction of what's on the play head
     }
 }
@@ -81,8 +85,9 @@ void audioIn(){
 void audioOut(){
     int16_t delay_signal[N_CHANNELS];
     for(uint8_t i=0; i<N_CHANNELS; i++){
-        delay_signal[i]  = scale8(input[i], input_mix);
-        delay_signal[i] += scale8(play_head[i], delay_mix);
+        delay_signal[i] = scale8(play_head[i], delay_mix);
+        delay_signal[i]  += scale8(input[i], input_mix);
+
         delay_signal[i]  = scale8(delay_signal[i], volume);
         delay_signal[i]  = soft_clip(delay_signal[i]);               // soft clipper to avoid nasty distortion if the signal exceeds FULL_SCALE
 
@@ -100,6 +105,12 @@ void handleCC(byte channel, byte control, byte value){
             case CC_CUTOFF:
                 input_lpf[0].setGain(MIDIMAPF(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF));
                 input_lpf[1].setGain(MIDIMAPF(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF));
+                break;
+
+            case CC_DELAY_CUTOFF:
+                delay_lpf[0].setGain(MIDIMAPF(value, 0.1, 0.4));
+                delay_lpf[1].setGain(MIDIMAPF(value, 0.1, 0.4));
+
                 break;
             case CC_DELAY_TIME:
                 target_delay_time = MIDIMAP(value, MIN_DELAY_TIME, DELAY_BUFFER_SIZE-1);
@@ -123,6 +134,10 @@ void handleCC(byte channel, byte control, byte value){
             case CC_DELAY_PING_PONG:
                 delay_ping_pong = value > 64;
                 break;
+            case CC_DELAY_FILTER_ENABLE:
+                delay_filter_enable = value > 64;
+                break;
+
 
             case CC_BIT_REDUCTION:
                 bit_reduction = MIDIMAP(value, 0, BIT_DEPTH-1);
