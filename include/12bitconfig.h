@@ -41,4 +41,7 @@
 #define DELAY_BUFFER_SIZE 16384 // 61000 is cool
 #define MIN_DELAY_TIME 0
 
+// TAPE RECORDER
+#define TAPE_LENGTH 61000
+
 #endif
