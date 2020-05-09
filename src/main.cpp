@@ -22,8 +22,7 @@ uint8_t delay_feedback = 0;
 
 // Audio stream
 uint16_t sample_period = MIN_SAMPLE_PERIOD;
-int16_t input[N_CHANNELS], prev_input[N_CHANNELS];
-int16_t output[N_CHANNELS];
+int16_t input[N_CHANNELS], prev_input[N_CHANNELS], feedback[N_CHANNELS], output[N_CHANNELS];
 
 
 void setup(){
@@ -52,8 +51,8 @@ void audio(){
         input[i] = scale(input[i], volume);                          // input volume control
 
         play_head[i] = tape[i][(uint16_t)play_index];                // read back the tape
-        play_head[i] = scale(play_head[i], delay_feedback);          // scale this down - this is the feedback amount
-        tape[i][rec_index] = input[i] + play_head[i];                // record the signal to tape + add a fraction of what's on the play head [feedback]
+        feedback[i] = scale(play_head[i], delay_feedback);           // scale this signal down - this is the feedback amount
+        tape[i][rec_index] = input[i] + feedback[i];                 // record the signal to tape + add a fraction of what's on the play head
 
         output[i] = crossfade(play_head[i], input[i], delay_mix);    // mix the input + delay
         output[i] = soft_clip(output[i]);                            // soft clipper to avoid nasty distortion if the signal exceeds FULL_SCALE
