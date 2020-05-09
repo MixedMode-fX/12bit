@@ -22,8 +22,8 @@ uint8_t delay_feedback = 0;
 
 // Audio stream
 uint16_t sample_period = MIN_SAMPLE_PERIOD;
-int16_t input[N_CHANNELS];
-int16_t output[N_CHANNELS], prev_output[N_CHANNELS];
+int16_t input[N_CHANNELS], prev_input[N_CHANNELS];
+int16_t output[N_CHANNELS];
 
 
 void setup(){
@@ -44,22 +44,21 @@ void audio(){
     play_index %= DELAY_BUFFER_SIZE;
 
 
-    int16_t delay_signal[N_CHANNELS];
     for(uint8_t i=0; i<N_CHANNELS; i++){
-        input[i] = adcDCOffset(i, CS_ADC);                          // read ADC and remove DC offset
-        output[i] = crush(input[i], bit_reduction);                 // reduce bit depth
-        output[i] = lpf(output[i], prev_output[i], lpf_cutoff);     // low pass filter
-        prev_output[i] = output[i];
-        output[i] = scale(output[i], volume);                       // volume control
+        input[i] = adcDCOffset(i, CS_ADC);                           // read ADC and remove DC offset
+        input[i] = crush(input[i], bit_reduction);                   // reduce bit depth
+        input[i] = lpf(input[i], prev_input[i], lpf_cutoff);         // low pass filter
+        prev_input[i] = input[i];
+        input[i] = scale(input[i], volume);                          // volume control
 
         play_head[i] = buffer[i][(uint16_t)play_index];
         play_head[i] = scale(play_head[i], delay_feedback);
-        buffer[i][rec_index] = output[i] + play_head[i];            // record our signal to our buffer + add a fraction of what's on the play head
+        buffer[i][rec_index] = input[i] + play_head[i];              // record our signal to our buffer + add a fraction of what's on the play head
 
-        delay_signal[i] = crossfade(play_head[i], output[i], delay_mix);    // mix the input + delay
-        delay_signal[i] = soft_clip(delay_signal[i]);               // soft clipper to avoid nasty distortion if the signal exceeds FULL_SCALE
+        output[i] = crossfade(play_head[i], input[i], delay_mix);    // mix the input + delay
+        output[i] = soft_clip(output[i]);                            // soft clipper to avoid nasty distortion if the signal exceeds FULL_SCALE
 
-        dacDCOffset(delay_signal[i], i, CS_DAC);                    // write to the dac and apply DC offset required
+        dacDCOffset(output[i], i, CS_DAC);                           // write to the dac and apply DC offset required
     }
 }
 
