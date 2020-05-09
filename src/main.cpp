@@ -13,7 +13,7 @@ uint8_t volume = 127;
 float lpf_cutoff = DEFAULT_LPF_CUTOFF;
 
 // Delay
-int16_t buffer[N_CHANNELS][DELAY_BUFFER_SIZE];    // this is our tape loop
+int16_t tape[N_CHANNELS][DELAY_BUFFER_SIZE];      // this is our tape loop - usually called buffer
 int16_t play_head[N_CHANNELS];                    // current value played back from the tape
 uint16_t rec_index;                               // position of the record head
 int32_t play_index;                               // position of the playback head
@@ -50,8 +50,8 @@ void audio(){
         prev_input[i] = input[i];                                   // this is the z^-1 delay for the filter
         input[i] = scale(input[i], volume);                         // volume control
 
-        buffer[i][rec_index] = input[i];                            // record the signal to tape
-        play_head[i] = buffer[i][(uint16_t)play_index];
+        tape[i][rec_index] = input[i];                              // record the signal to tape
+        play_head[i] = tape[i][(uint16_t)play_index];               // read back the tape
         
         output[i] = crossfade(input[i], play_head[i], delay_mix);   // mix input and play head signals
         output[i] = soft_clip(output[i]);                           // soft clipper to avoid nasty distortion if the signal exceeds FULL_SCALE
