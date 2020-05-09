@@ -6,11 +6,13 @@
 #include <fx.h>
 
 
+// FX controls
 uint16_t sample_period = MIN_SAMPLE_PERIOD;
 uint8_t bit_reduction = 0;
 uint8_t volume = 127;
 float lpf_cutoff = DEFAULT_LPF_CUTOFF;
 
+// Audio stream
 int16_t input[N_CHANNELS];
 int16_t output[N_CHANNELS], prev_output[N_CHANNELS];
 
