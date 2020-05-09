@@ -14,28 +14,30 @@ uint8_t gain = 0xFF;
 uint8_t volume = 0xFF;
 
 // Delay
-int16_t buffer[N_CHANNELS][DELAY_BUFFER_SIZE];    // this is our tape loop
-int16_t play_head[N_CHANNELS];              // current value played back from the tape
-uint16_t rec_index;                         // position of the record head
-int32_t play_index;                         // position of the playback head
-uint16_t delay_time = DELAY_BUFFER_SIZE/2;  // in samples
-uint16_t target_delay_time = DELAY_BUFFER_SIZE/2;  // in samples
-uint8_t input_mix = 0xFF;
-uint8_t delay_mix = 0;
+int16_t tape[N_CHANNELS][DELAY_BUFFER_SIZE];    // this is our tape loop
+int16_t play_head[N_CHANNELS];                  // current value played back from the tape
+int16_t feedback[N_CHANNELS];                   // scaled down version of the play_head signal, to be recorded back to tape 
+uint16_t rec_index;                             // position of the record head
+int32_t play_index;                             // position of the playback head
+uint16_t delay_time = DELAY_BUFFER_SIZE/2;      // in samples
+uint16_t target_delay_time = DELAY_BUFFER_SIZE/2;
+uint8_t input_mix = 127;
+uint8_t delay_mix = 127;
 uint8_t delay_feedback, delay_reverse, delay_ping_pong, delay_filter_enable;
-
-IntervalTimer controlsTimer;                // delay time smoothing
-void controlsFilter();
 
 // Audio stream
 uint16_t sample_period_dac = MIN_SAMPLE_PERIOD_DAC;
 uint16_t sample_period_adc = MIN_SAMPLE_PERIOD;
-int16_t input[N_CHANNELS], feedback[N_CHANNELS];
-int16_t output[N_CHANNELS];
+int16_t input[N_CHANNELS], output[N_CHANNELS];
 
 // FX
 LPF input_lpf[N_CHANNELS] = LPF(DEFAULT_LPF_CUTOFF);
 LPF delay_lpf[N_CHANNELS] = LPF(DEFAULT_LPF_CUTOFF);
+
+// Timer for updating controls
+IntervalTimer controlsTimer;
+void controlsFilter();
+
 
 void setup(){
     codecBegin();
@@ -53,45 +55,29 @@ void loop(){
 }
 
 void audioIn(){
-
-    // delay write and read index
-    rec_index = (rec_index + 1) % DELAY_BUFFER_SIZE;
-    if(!delay_reverse){
-        play_index =  (rec_index - delay_time);
-    } else {
-        play_index = DELAY_BUFFER_SIZE - (rec_index - delay_time);
-    }
-    if (play_index < 0) play_index += DELAY_BUFFER_SIZE;
-    play_index %= DELAY_BUFFER_SIZE;
-
-
+    // Input & playback
     for(uint8_t i=0; i<N_CHANNELS; i++){
-        input[i] = -adcDCOffset(i, CS_ADC);                          // read ADC and remove DC offset, input buffer is phase inverting
-        input[i] = scale8(input[i], gain) << 2; 
-        input[i] = crush(input[i], bit_reduction, bit_mask);                 // reduce bit depth
-        input[i] = input_lpf[i].apply(input[i]);     // low pass filter
+        input[i] = adcDCOffset(i, CS_ADC);                           // read ADC and remove DC offset
+        input[i] = crush(input[i], bit_reduction, bit_mask);         // reduce bit depth & apply mask
+        input[i] = input_lpf[i].apply(input[i]);                     // low pass filter
+        input[i] = scale8(input[i], gain);                           // input gain control
 
-
-        uint8_t fb_c = delay_ping_pong ? (i+1)%N_CHANNELS : i; // feedback channel
-        play_head[i] = buffer[i][(uint16_t)play_index];
-
-        feedback[i] = play_head[fb_c];
-        if (delay_filter_enable) feedback[i] = delay_lpf[i].apply(feedback[i]);     // low pass filter
-        feedback[i] = scale8(feedback[i], delay_feedback);  // when in ping pong, get the delay from the next channel
-        buffer[i][rec_index] = input[i] + feedback[i];            // record our signal to our buffer + add a fraction of what's on the play head
+        play_head[i] = tape[i][(uint16_t)play_index];                // read back the tape
     }
 }
 
 void audioOut(){
-    int16_t delay_signal[N_CHANNELS];
+    // Output mixer
     for(uint8_t i=0; i<N_CHANNELS; i++){
-        delay_signal[i] = scale8(play_head[i], delay_mix);
-        delay_signal[i]  += scale8(input[i], input_mix);
+        uint8_t fb_c = delay_ping_pong ? (i+1)%N_CHANNELS : i;       // feedback channel
+        feedback[i] = scale8(play_head[fb_c], delay_feedback);       // feedback is not taken from either the same or the other channel when set to ping pong
+        tape[i][rec_index] = input[i] + feedback[i];                 // record the signal to tape + add a fraction of what's on the play head
 
-        delay_signal[i]  = scale8(delay_signal[i], volume);
-        delay_signal[i]  = soft_clip(delay_signal[i]);               // soft clipper to avoid nasty distortion if the signal exceeds FULL_SCALE
-
-        dacDCOffset(delay_signal[i], i, CS_DAC);                    // write to the dac and apply DC offset required
+        output[i]  = scale8(input[i], input_mix); 
+        output[i] += scale8(play_head[i], delay_mix);
+        output[i]  = scale8(output[i], volume);
+        output[i]  = soft_clip(output[i]);                           // soft clipper to avoid nasty distortion if the signal exceeds FULL_SCALE
+        dacDCOffset(output[i], i, CS_DAC);                           // write to the dac and apply DC offset required
     }
 }
 
