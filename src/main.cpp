@@ -13,16 +13,17 @@ float lpf_cutoff = DEFAULT_LPF_CUTOFF;
 
 // Delay
 int16_t tape[N_CHANNELS][DELAY_BUFFER_SIZE];    // this is our tape loop
-int16_t play_head[N_CHANNELS];              // current value played back from the tape
-uint16_t rec_index;                         // position of the record head
-int32_t play_index;                         // position of the playback head
-uint16_t delay_time = DELAY_BUFFER_SIZE/2;                        // in samples
+int16_t play_head[N_CHANNELS];                  // current value played back from the tape
+int16_t feedback[N_CHANNELS];                   // scaled down version of the play_head signal, to be recorded back to tape 
+uint16_t rec_index;                             // position of the record head
+int32_t play_index;                             // position of the playback head
+uint16_t delay_time = DELAY_BUFFER_SIZE/2;      // in samples
 uint8_t delay_mix = 127;
 uint8_t delay_feedback = 0;
 
 // Audio stream
 uint16_t sample_period = MIN_SAMPLE_PERIOD;
-int16_t input[N_CHANNELS], prev_input[N_CHANNELS], feedback[N_CHANNELS], output[N_CHANNELS];
+int16_t input[N_CHANNELS], prev_input[N_CHANNELS], output[N_CHANNELS];
 
 
 void setup(){
