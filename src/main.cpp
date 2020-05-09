@@ -34,7 +34,6 @@ void handleCC(byte channel, byte control, byte value){
     if (channel == 1){
         switch(control){
             case CC_VOLUME:
-                // volume = MIDIMAPF(value, MIN_VOLUME, MAX_VOLUME);
                 volume = value << 1;
                 break;
             case CC_BIT_REDUCTION:
