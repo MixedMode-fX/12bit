@@ -43,7 +43,6 @@ void audio(){
     play_index %= DELAY_BUFFER_SIZE;
 
 
-    int16_t delay_signal[N_CHANNELS];
     for(uint8_t i=0; i<N_CHANNELS; i++){
         input[i] = adcDCOffset(i, CS_ADC);                          // read ADC and remove DC offset
         input[i] = crush(input[i], bit_reduction);                  // reduce bit depth
