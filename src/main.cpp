@@ -48,12 +48,12 @@ void audio(){
         input[i] = adcDCOffset(i, CS_ADC);                           // read ADC and remove DC offset
         input[i] = crush(input[i], bit_reduction);                   // reduce bit depth
         input[i] = lpf(input[i], prev_input[i], lpf_cutoff);         // low pass filter
-        prev_input[i] = input[i];
-        input[i] = scale(input[i], volume);                          // volume control
+        prev_input[i] = input[i];                                    // this is the z^-1 delay for the filter
+        input[i] = scale(input[i], volume);                          // input volume control
 
         play_head[i] = buffer[i][(uint16_t)play_index];
         play_head[i] = scale(play_head[i], delay_feedback);
-        buffer[i][rec_index] = input[i] + play_head[i];              // record our signal to our buffer + add a fraction of what's on the play head
+        buffer[i][rec_index] = input[i] + play_head[i];              // record the signal to tape + add a fraction of what's on the play head [feedback]
 
         output[i] = crossfade(play_head[i], input[i], delay_mix);    // mix the input + delay
         output[i] = soft_clip(output[i]);                            // soft clipper to avoid nasty distortion if the signal exceeds FULL_SCALE
