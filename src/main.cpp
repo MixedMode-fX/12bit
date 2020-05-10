@@ -93,9 +93,11 @@ void handleCC(byte channel, byte control, byte value){
                 tape_delay.setFeedback(value << SCALE_CTRL_SHIFT);
                 break;
             case CC_DELAY_CUTOFF:
-                // tape_delay.setLPFCutoff(MIDIMAPF(value, 0.1, 0.4));
+                tape_delay.setLPFCutoff(MIDIMAPF(value, 0.1, 0.4));
+                break;
+            case CC_DELAY_HEADSPACE:
                 tape_delay.setHeadSpacing(MIDIMAP(value, 0, DELAY_BUFFER_SIZE/2));
-               break;
+                break;
             case CC_INPUT_MIX:
                 tape_delay.setInputMix(value << SCALE_CTRL_SHIFT);
                 break;
