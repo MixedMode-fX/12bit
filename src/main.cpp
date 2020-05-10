@@ -86,45 +86,6 @@ void handleCC(byte channel, byte control, byte value){
                 input_lpf[1].setGain(MIDIMAPF(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF));
                 break;
 
-            case CC_DELAY_TIME:
-                tape_delay.setDelayTarget(MIDIMAP(value, MIN_DELAY_TIME, DELAY_BUFFER_SIZE-1));
-                break;
-            case CC_DELAY_FEEDBACK:
-                tape_delay.setFeedback(value << SCALE_CTRL_SHIFT);
-                break;
-            case CC_DELAY_CUTOFF:
-                tape_delay.setLPFCutoff(MIDIMAPF(value, 0.1, 0.4));
-                break;
-            case CC_DELAY_HEADSPACE:
-                tape_delay.setHeadSpacing(MIDIMAP(value, 0, DELAY_BUFFER_SIZE/2));
-                break;
-            case CC_INPUT_MIX:
-                tape_delay.setInputMix(value << SCALE_CTRL_SHIFT);
-                break;
-            case CC_DELAY_MIX:
-                tape_delay.setDelayMix(value << SCALE_CTRL_SHIFT);
-                break;
-            case CC_DELAY_REVERSE:
-                tape_delay.setReverse(value > 64);
-                break;
-            case CC_DELAY_PING_PONG:
-                tape_delay.setPingPong(value > 64);
-                break;
-            case CC_DELAY_FILTER_ENABLE:
-                tape_delay.setLPF(value > 64);
-                break;
-
-            case CC_DELAY_HEAD0:
-            case CC_DELAY_HEAD1:
-            case CC_DELAY_HEAD2:
-            case CC_DELAY_HEAD3:
-            case CC_DELAY_HEAD4:
-            case CC_DELAY_HEAD5:
-            case CC_DELAY_HEAD6:
-            case CC_DELAY_HEAD7:
-                tape_delay.setHeadLevel(control - CC_DELAY_HEAD0, value);
-                break;
-
             case CC_VOLUME:
                 volume = value << 1;
                 break;
@@ -161,6 +122,7 @@ void handleCC(byte channel, byte control, byte value){
                 break;
 
             default:
+                tape_delay.handleCC(channel, control, value);
                 break;
 
         }

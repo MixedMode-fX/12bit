@@ -174,6 +174,50 @@ class TapeDelay {
             }
         }
 
+        void handleCC(byte channel, byte control, byte value){
+        
+            switch(control){
+                case CC_DELAY_TIME:
+                    setDelayTarget(MIDIMAP(value, MIN_DELAY_TIME, DELAY_BUFFER_SIZE-1));
+                    break;
+                case CC_DELAY_FEEDBACK:
+                    setFeedback(value << SCALE_CTRL_SHIFT);
+                    break;
+                case CC_DELAY_CUTOFF:
+                    setLPFCutoff(MIDIMAPF(value, 0.1, 0.4));
+                    break;
+                case CC_DELAY_HEADSPACE:
+                    setHeadSpacing(MIDIMAP(value, 0, DELAY_BUFFER_SIZE/2));
+                    break;
+                case CC_INPUT_MIX:
+                    setInputMix(value << SCALE_CTRL_SHIFT);
+                    break;
+                case CC_DELAY_MIX:
+                    setDelayMix(value << SCALE_CTRL_SHIFT);
+                    break;
+                case CC_DELAY_REVERSE:
+                    setReverse(value > 64);
+                    break;
+                case CC_DELAY_PING_PONG:
+                    setPingPong(value > 64);
+                    break;
+                case CC_DELAY_FILTER_ENABLE:
+                    setLPF(value > 64);
+                    break;
+
+                case CC_DELAY_HEAD0:
+                case CC_DELAY_HEAD1:
+                case CC_DELAY_HEAD2:
+                case CC_DELAY_HEAD3:
+                case CC_DELAY_HEAD4:
+                case CC_DELAY_HEAD5:
+                case CC_DELAY_HEAD6:
+                case CC_DELAY_HEAD7:
+                    tape_delay.setHeadLevel(control - CC_DELAY_HEAD0, value);
+                    break;
+            }
+        }
+
     private:
         // hardware
         RecordHead record;
