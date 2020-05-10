@@ -213,7 +213,15 @@ class TapeDelay {
                 case CC_DELAY_HEAD5:
                 case CC_DELAY_HEAD6:
                 case CC_DELAY_HEAD7:
-                    tape_delay.setHeadLevel(control - CC_DELAY_HEAD0, value);
+                case CC_DELAY_HEAD8:
+                case CC_DELAY_HEAD9:
+                case CC_DELAY_HEAD10:
+                case CC_DELAY_HEAD11:
+                case CC_DELAY_HEAD12:
+                case CC_DELAY_HEAD13:
+                case CC_DELAY_HEAD14:
+                case CC_DELAY_HEAD15:
+                    setHeadLevel(control - CC_DELAY_HEAD0, value);
                     break;
             }
         }
