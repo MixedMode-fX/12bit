@@ -97,8 +97,8 @@ class TapeDelay {
             }
         }
         void setDelayTarget(uint16_t dt){ target_delay_time = dt; }
-        void setHeadSpacing(uint16_t s){ head_spacing = s; setDelay(delay_time); }
-        void setFeedback(uint8_t fb){ feedback_level = fb; }
+        void setHeadSpacing(uint16_t s){ target_head_spacing = s; }
+        void setFeedback(uint8_t fb){ feedback_level = scale8(fb, 255/taps); }
         void setReverse(bool r){ 
             for(uint8_t i=0; i<taps; i++){
                 repro[i].setReverse(r); 
@@ -127,7 +127,7 @@ class TapeDelay {
 
             feedback[channel] = 0;
             for(uint8_t i=0; i<taps; i++){
-                feedback[channel] += scale8(repro[i].play(fb_c), feedback_level) / taps;
+                feedback[channel] += scale8(repro[i].play(fb_c), feedback_level);
             }
             if (filter) feedback[channel] = lpf[channel].apply(feedback[channel]);
             
@@ -135,7 +135,7 @@ class TapeDelay {
 
             repro_signal[channel] = 0;
             for(uint8_t i=0; i<taps; i++){
-                repro_signal[channel] += repro[i].play(fb_c);
+                repro_signal[channel] += scale8(repro[i].play((fb_c + i * ping_pong) % N_CHANNELS), 255/taps);
             }
         }
 
@@ -152,6 +152,15 @@ class TapeDelay {
             }
             if (target_delay_time < delay_time) {
                 delay_time -= 1;
+                setDelay(delay_time);
+            }
+
+            if (target_head_spacing > head_spacing) {
+                head_spacing += 1;
+                setDelay(delay_time);
+            }
+            if (target_head_spacing < head_spacing) {
+                head_spacing -= 1;
                 setDelay(delay_time);
             }
         }
@@ -175,7 +184,7 @@ class TapeDelay {
         uint8_t input_mix = 127;
         uint8_t delay_mix = 127;
         uint16_t target_delay_time, delay_time;
-        uint16_t head_spacing = 5000;
+        uint16_t target_head_spacing, head_spacing = 5000;
 
 
 };

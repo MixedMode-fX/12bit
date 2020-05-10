@@ -27,7 +27,7 @@ int16_t input[N_CHANNELS], output[N_CHANNELS];
 // FX
 LPF input_lpf[N_CHANNELS] = LPF(DEFAULT_LPF_CUTOFF);
 
-TapeDelay<2> tape_delay(TAPE_LENGTH-1);
+TapeDelay<1> tape_delay(TAPE_LENGTH-1);
 int16_t delay_output[N_CHANNELS];
 
 
