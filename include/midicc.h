@@ -8,6 +8,16 @@
 #define CC_DELAY_CUTOFF 19
 #define CC_INPUT_MIX 20
 #define CC_DELAY_MIX 21
+
+#define CC_DELAY_HEAD0 60
+#define CC_DELAY_HEAD1 61
+#define CC_DELAY_HEAD2 62
+#define CC_DELAY_HEAD3 63
+#define CC_DELAY_HEAD4 64
+#define CC_DELAY_HEAD5 65
+#define CC_DELAY_HEAD6 66
+#define CC_DELAY_HEAD7 67
+
 #define CC_VOLUME 22
 
 #define CC_DELAY_PING_PONG 0

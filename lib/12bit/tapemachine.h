@@ -52,6 +52,7 @@ class PlaybackHead{
             delay_time %= record->getLength();
         }
         void setReverse(bool r){ reverse = r; }
+        void setLevel(uint8_t l){ level = l; }
 
         void spin(){
             // spin the tape
@@ -64,8 +65,13 @@ class PlaybackHead{
             position %= record->getLength();
         }
 
-        int16_t play(uint8_t channel){
+        int16_t playPreFader(uint8_t channel){
             return record->readTape(channel, (uint16_t)position);
+        }
+
+
+        int16_t play(uint8_t channel){
+            return scale8(record->readTape(channel, (uint16_t)position), level);
         }
 
 
@@ -74,6 +80,7 @@ class PlaybackHead{
         uint16_t delay_time;
         int32_t position;
         bool reverse;
+        uint8_t level = 0;
 
 };
 
@@ -87,6 +94,7 @@ class TapeDelay {
                 repro[i].setRecorder(&record);
                 repro[i].setDelay(d);
             }
+            repro[0].setLevel(0xFF);
             target_delay_time = d;
             delay_time = d;
         }
@@ -98,7 +106,8 @@ class TapeDelay {
         }
         void setDelayTarget(uint16_t dt){ target_delay_time = dt; }
         void setHeadSpacing(uint16_t s){ target_head_spacing = s; }
-        void setFeedback(uint8_t fb){ feedback_level = scale8(fb, 255/taps); }
+        void setHeadLevel(uint8_t head, uint8_t l){ repro[head].setLevel(l); }
+        void setFeedback(uint8_t fb){ feedback_level = fb; }
         void setReverse(bool r){ 
             for(uint8_t i=0; i<taps; i++){
                 repro[i].setReverse(r); 
@@ -135,7 +144,7 @@ class TapeDelay {
 
             repro_signal[channel] = 0;
             for(uint8_t i=0; i<taps; i++){
-                repro_signal[channel] += scale8(repro[i].play((fb_c + i * ping_pong) % N_CHANNELS), 255/taps);
+                repro_signal[channel] += repro[i].play((fb_c + i * ping_pong) % N_CHANNELS);
             }
         }
 

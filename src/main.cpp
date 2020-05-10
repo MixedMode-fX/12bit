@@ -27,7 +27,7 @@ int16_t input[N_CHANNELS], output[N_CHANNELS];
 // FX
 LPF input_lpf[N_CHANNELS] = LPF(DEFAULT_LPF_CUTOFF);
 
-TapeDelay<1> tape_delay(TAPE_LENGTH-1);
+TapeDelay<8> tape_delay(TAPE_LENGTH-1);
 int16_t delay_output[N_CHANNELS];
 
 
@@ -110,6 +110,17 @@ void handleCC(byte channel, byte control, byte value){
                 break;
             case CC_DELAY_FILTER_ENABLE:
                 tape_delay.setLPF(value > 64);
+                break;
+
+            case CC_DELAY_HEAD0:
+            case CC_DELAY_HEAD1:
+            case CC_DELAY_HEAD2:
+            case CC_DELAY_HEAD3:
+            case CC_DELAY_HEAD4:
+            case CC_DELAY_HEAD5:
+            case CC_DELAY_HEAD6:
+            case CC_DELAY_HEAD7:
+                tape_delay.setHeadLevel(control - CC_DELAY_HEAD0, value);
                 break;
 
             case CC_VOLUME:
