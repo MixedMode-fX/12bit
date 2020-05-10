@@ -47,7 +47,10 @@ class PlaybackHead{
         void setRecorder(RecordHead *r){
             record = r;
         }
-        void setDelay(uint16_t d){ delay_time = d; }
+        void setDelay(uint16_t d){ 
+            delay_time = d; 
+            delay_time %= record->getLength();
+        }
         void setReverse(bool r){ reverse = r; }
 
         void spin(){
@@ -75,21 +78,32 @@ class PlaybackHead{
 };
 
 
-
+template<int taps>
 class TapeDelay {
 
     public:
         TapeDelay(uint16_t d){
-            repro.setRecorder(&record);
-            repro.setDelay(d);
+            for(uint8_t i=0; i<taps; i++){
+                repro[i].setRecorder(&record);
+                repro[i].setDelay(d);
+            }
             target_delay_time = d;
             delay_time = d;
         }
 
-        void setDelay(uint16_t d){ repro.setDelay(d); }
+        void setDelay(uint16_t d){ 
+            for(uint8_t i=0; i<taps; i++){
+                repro[i].setDelay(d + i * head_spacing);
+            }
+        }
         void setDelayTarget(uint16_t dt){ target_delay_time = dt; }
+        void setHeadSpacing(uint16_t s){ head_spacing = s; setDelay(delay_time); }
         void setFeedback(uint8_t fb){ feedback_level = fb; }
-        void setReverse(bool r){ repro.setReverse(r); }
+        void setReverse(bool r){ 
+            for(uint8_t i=0; i<taps; i++){
+                repro[i].setReverse(r); 
+            }
+        }
         void setPingPong(bool p){ ping_pong = p; }
         void setLPF(bool f){ filter = f; }
         void setLPFCutoff(float c){ 
@@ -102,16 +116,27 @@ class TapeDelay {
 
         void spin(){
             record.spin();
-            repro.spin();
+            for(uint8_t i=0; i<taps; i++){
+                repro[i].spin();
+            }
         }
 
         void rec(uint8_t channel, int16_t input){
             input_signal[channel] = input;
             uint8_t fb_c = ping_pong ? (channel+1)%N_CHANNELS : channel;
-            feedback[channel] = scale8(repro.play(fb_c), feedback_level);
+
+            feedback[channel] = 0;
+            for(uint8_t i=0; i<taps; i++){
+                feedback[channel] += scale8(repro[i].play(fb_c), feedback_level) / taps;
+            }
             if (filter) feedback[channel] = lpf[channel].apply(feedback[channel]);
+            
             record.rec(channel, input + feedback[channel]);
-            repro_signal[channel] = repro.play(fb_c);
+
+            repro_signal[channel] = 0;
+            for(uint8_t i=0; i<taps; i++){
+                repro_signal[channel] += repro[i].play(fb_c);
+            }
         }
 
         int16_t out(uint8_t channel){
@@ -134,7 +159,7 @@ class TapeDelay {
     private:
         // hardware
         RecordHead record;
-        PlaybackHead repro;
+        PlaybackHead repro[taps];
         LPF lpf[N_CHANNELS] = {LPF(DEFAULT_LPF_CUTOFF), LPF(DEFAULT_LPF_CUTOFF)};
 
         // signals
@@ -150,6 +175,7 @@ class TapeDelay {
         uint8_t input_mix = 127;
         uint8_t delay_mix = 127;
         uint16_t target_delay_time, delay_time;
+        uint16_t head_spacing = 5000;
 
 
 };
