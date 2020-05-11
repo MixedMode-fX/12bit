@@ -242,7 +242,7 @@ class TapeDelay {
 
         // parameters        
         bool ping_pong = 0;
-        bool filter = 0;
+        bool filter = 1;
         uint8_t feedback_level = 0;
         uint8_t input_mix = 127;
         uint8_t delay_mix = 127;
