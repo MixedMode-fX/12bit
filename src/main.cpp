@@ -26,6 +26,7 @@ int16_t input[N_CHANNELS], output[N_CHANNELS];
 
 // FX
 LPF input_lpf[N_CHANNELS] = LPF(DEFAULT_LPF_CUTOFF);
+bool input_lpf_enable = 1;
 
 TapeDelay<16> tape_delay(TAPE_LENGTH-1);
 int16_t delay_output[N_CHANNELS];
@@ -58,7 +59,7 @@ void audioIn(){
     for(uint8_t i=0; i<N_CHANNELS; i++){
         input[i] = adcDCOffset(i, CS_ADC);                          // read ADC and remove DC offset
         input[i] = crush(input[i], bit_reduction, bit_mask);        // reduce bit depth & apply mask
-        input[i] = input_lpf[i].apply(input[i]);                    // low pass filter
+        if(input_lpf_enable) input[i] = input_lpf[i].apply(input[i]);  // low pass filter
         input[i] = scale8(input[i], gain);                          // input gain control
         tape_delay.rec(i, input[i]);                                // record to the tape
     }
@@ -79,6 +80,11 @@ void handleCC(byte channel, byte control, byte value){
         switch(control){
             case CC_GAIN:
                 gain = value << SCALE_CTRL_SHIFT;
+                break;
+
+
+            case CC_INPUT_FILTER_ENABLE:
+                input_lpf_enable = value < 64;
                 break;
 
             case CC_CUTOFF:

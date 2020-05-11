@@ -204,7 +204,7 @@ class TapeDelay {
                     setPingPong(value > 64);
                     break;
                 case CC_DELAY_FILTER_ENABLE:
-                    setLPF(value > 64);
+                    setLPF(value < 64);
                     break;
 
                 case CC_DELAY_HEAD0:
