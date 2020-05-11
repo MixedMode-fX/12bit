@@ -64,7 +64,7 @@ class LPF{
     public:
         LPF(double g){ _g = g; };
         int16_t apply(int16_t sample){
-            _prev_sample = _g * (sample - _prev_sample) + _g;
+            _prev_sample += _g * (sample - _prev_sample);
             return _prev_sample;
         }
 
