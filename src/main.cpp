@@ -82,8 +82,8 @@ void handleCC(byte channel, byte control, byte value){
                 break;
 
             case CC_CUTOFF:
-                input_lpf[0].setGain(MIDIMAPF(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF));
-                input_lpf[1].setGain(MIDIMAPF(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF));
+                input_lpf[0].setGain(MIDIMAP(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF));
+                input_lpf[1].setGain(MIDIMAP(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF));
                 break;
 
             case CC_VOLUME:

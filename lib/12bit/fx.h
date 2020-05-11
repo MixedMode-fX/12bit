@@ -62,18 +62,18 @@ class LPF{
      */
 
     public:
-        LPF(double g){ _g = g; };
+        LPF(uint8_t g){ _g = g; };
         int16_t apply(int16_t sample){
-            _prev_sample += _g * (sample - _prev_sample);
+            _prev_sample += scale8((sample - _prev_sample), _g);
             return _prev_sample;
         }
 
-        void setGain(double g){
+        void setGain(uint8_t g){
             _g = g;
         }
 
     private:
-        double _g;
+        uint8_t _g;
         int16_t _prev_sample;
 };
 

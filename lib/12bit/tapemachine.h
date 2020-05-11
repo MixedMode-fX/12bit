@@ -132,15 +132,17 @@ class TapeDelay {
 
         void rec(uint8_t channel, int16_t input){
             input_signal[channel] = input;
+            
             uint8_t fb_c = ping_pong ? (channel+1)%N_CHANNELS : channel;
 
             feedback[channel] = 0;
             for(uint8_t i=0; i<taps; i++){
                 feedback[channel] += scale8(repro[i].play(fb_c), feedback_level);
             }
-            if (filter) feedback[channel] = lpf[channel].apply(feedback[channel]);
             
-            record.rec(channel, input + feedback[channel]);
+            uint16_t record_signal = input + feedback[channel];
+            if (filter) record_signal = lpf[channel].apply(record_signal);
+            record.rec(channel, record_signal);
 
             repro_signal[channel] = 0;
             for(uint8_t i=0; i<taps; i++){
@@ -184,7 +186,7 @@ class TapeDelay {
                     setFeedback(value << SCALE_CTRL_SHIFT);
                     break;
                 case CC_DELAY_CUTOFF:
-                    setLPFCutoff(MIDIMAPF(value, 0.1, 0.4));
+                    setLPFCutoff(MIDIMAP(value, MIN_LPF_CUTOFF, MAX_LPF_CUTOFF));
                     break;
                 case CC_DELAY_HEADSPACE:
                     setHeadSpacing(MIDIMAP(value, 0, DELAY_BUFFER_SIZE/2));
