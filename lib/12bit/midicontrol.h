@@ -7,18 +7,21 @@
 
 USBHost usbHost = USBHost();
 USBHub usbHub = USBHub(usbHost);
-MIDIDevice usbMIDI = MIDIDevice(usbHost);
+MIDIDevice usbMIDIHost = MIDIDevice(usbHost);
 
 
 void handleCC(byte channel, byte control, byte value);
 
+// start both USB MIDI and USB HOST
 void midiBegin(){
-    usbMIDI.begin();
+    usbMIDIHost.begin();
+    usbMIDIHost.setHandleControlChange(handleCC);
     usbMIDI.setHandleControlChange(handleCC);
 }
 
 void midi(){
     usbHost.Task();
+    usbMIDIHost.read();
     usbMIDI.read();
 }
 

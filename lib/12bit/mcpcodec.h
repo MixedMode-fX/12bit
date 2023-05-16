@@ -6,8 +6,9 @@
 
 // Simple library for MCP48x2 DAC & MCP3202 ADC
 
-IntervalTimer audioTimer;
-void audio();
+IntervalTimer audioTimerADC, audioTimerDAC;
+void audioIn();
+void audioOut();
 
 // SPI initialisation for ADC & DAC
 void codecBegin(){
@@ -15,12 +16,15 @@ void codecBegin(){
   SPI.setBitOrder(MSBFIRST);
   pinMode(CS_DAC, OUTPUT);    pinMode(CS_ADC, OUTPUT);
 
-  audioTimer.begin(audio, DEFAULT_SAMPLE_PERIOD);
-  audioTimer.priority(0);
+  audioTimerADC.begin(audioIn, DEFAULT_SAMPLE_PERIOD);
+  audioTimerADC.priority(0);
+  audioTimerDAC.begin(audioOut, DEFAULT_SAMPLE_PERIOD);
+  audioTimerDAC.priority(1);
+
 }
 
 // Sample *channel* on ADC with 
-int16_t adc(uint8_t channel, uint8_t cs_pin){
+uint16_t adc(uint8_t channel, uint8_t cs_pin){
   uint8_t data_in = 0;
   uint16_t result = 0;
   digitalWrite(cs_pin, LOW);
@@ -36,14 +40,23 @@ int16_t adc(uint8_t channel, uint8_t cs_pin){
   return result;
 }
 
+// adc but removes DC offset
+int16_t adcDCOffset(uint8_t channel, uint8_t cs_pin){ 
+  return adc(channel, cs_pin) - HALF_SCALE;
+}
 
 // Output *value* on DAC *channel*
-void dac(int16_t value, uint8_t channel, uint8_t cs_pin){
-  uint16_t dac_out = (channel << 15) | (1 << 14) | (0 << 13) | (1 << 12) | ( value & 0xfff );
+void dac(uint16_t value, uint8_t channel, uint8_t cs_pin){
+  uint16_t dac_out = (channel << 15) | (1 << 14) | (0 << 13) | (1 << 12) | ( value & ((1 << BIT_DEPTH) - 1) );
   digitalWrite(cs_pin, LOW);
   SPI.transfer(dac_out >> 8);
   SPI.transfer(dac_out & 255);
   digitalWrite(cs_pin, HIGH);
+}
+
+// dac but with signal centred around 0
+void dacDCOffset(int16_t value, uint8_t channel, uint8_t cs_pin){
+  dac(value + HALF_SCALE, channel, cs_pin);
 }
 
 #endif
